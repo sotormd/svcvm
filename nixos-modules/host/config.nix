@@ -11,8 +11,8 @@
 
 let
   inherit (config.microvm) stateDir;
-  microvm-cli = pkgs.callPackage ../../pkgs/microvm-cli.nix { inherit stateDir; };
-  user = "microvm";
+  svcvm-cli = pkgs.callPackage ../../pkgs/svcvm-cli.nix { inherit stateDir; };
+  user = "svcvm";
   group = "kvm";
 in
 {
@@ -21,11 +21,11 @@ in
     "tap"
   ];
 
-  # create the stateDir for all microvms
+  # create the stateDir for all svcvms
   systemd.tmpfiles.rules = [ "d ${stateDir} 755 ${user} ${group} -" ];
 
-  # install the microvm cli
-  environment.systemPackages = [ microvm-cli ];
+  # install the svcvm cli
+  environment.systemPackages = [ svcvm-cli ];
 
   # create the user
   users.users.${user} = {
@@ -48,7 +48,7 @@ in
     }
   ];
 
-  # systemd services for all microvms
+  # systemd services for all svcvms
   systemd.services =
     builtins.foldl'
       (
@@ -60,19 +60,19 @@ in
             runner = guestConfig.microvm.declaredRunner;
           in
           {
-            "install-microvm-${name}" = {
-              description = "Install microvm '${name}'";
+            "install-svcvm-${name}" = {
+              description = "Install svcvm '${name}'";
               before = [
-                "microvm@${name}.service"
-                "microvm-tap-interfaces@${name}.service"
-                "microvm-virtiofsd@${name}.service"
-                "microvm-set-booted@${name}.service"
+                "svcvm@${name}.service"
+                "svcvm-tap-interfaces@${name}.service"
+                "svcvm-virtiofsd@${name}.service"
+                "svcvm-set-booted@${name}.service"
               ];
-              partOf = [ "microvm@${name}.service" ];
-              wantedBy = [ "microvms.target" ];
+              partOf = [ "svcvm@${name}.service" ];
+              wantedBy = [ "svcvms.target" ];
               serviceConfig = {
                 Type = "oneshot";
-                SyslogIdentifier = "install-microvm-${name}";
+                SyslogIdentifier = "install-svcvm-${name}";
               };
               script = ''
                 mkdir -p ${stateDir}/${name}
@@ -82,16 +82,16 @@ in
                 ln -sTf ${guestConfig.system.build.toplevel} toplevel
               '';
             };
-            "microvm@${name}" = {
+            "svcvm@${name}" = {
               path = lib.mkForce [ ];
               serviceConfig.Type = "simple";
               overrideStrategy = "asDropin";
             };
-            "microvm-tap-interfaces@${name}" = {
+            "svcvm-tap-interfaces@${name}" = {
               path = lib.mkForce [ ];
               overrideStrategy = "asDropin";
             };
-            "microvm-virtiofsd@${name}" = {
+            "svcvm-virtiofsd@${name}" = {
               path = lib.mkForce [ ];
               overrideStrategy = "asDropin";
             };
@@ -99,30 +99,30 @@ in
         )
       )
       {
-        "microvm-tap-interfaces@" = {
-          description = "Setup microvm '%i' TAP interfaces";
-          before = [ "microvm@%i.service" ];
-          partOf = [ "microvm@%i.service" ];
+        "svcvm-tap-interfaces@" = {
+          description = "Setup svcvm '%i' TAP interfaces";
+          before = [ "svcvm@%i.service" ];
+          partOf = [ "svcvm@%i.service" ];
           after = [
             "network.target"
-            "microvm-set-booted@%i.service"
+            "svcvm-set-booted@%i.service"
           ];
           unitConfig.ConditionPathExists = "${stateDir}/%i/current/bin/tap-up";
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
-            SyslogIdentifier = "microvm-tap-interfaces@%i";
+            SyslogIdentifier = "svcvm-tap-interfaces@%i";
             ExecStart = "${stateDir}/%i/current/bin/tap-up";
             ExecStop = "${stateDir}/%i/booted/bin/tap-down";
           };
         };
-        "microvm-virtiofsd@" = {
-          description = "VirtioFS daemons for microvm '%i'";
-          before = [ "microvm@%i.service" ];
-          partOf = [ "microvm@%i.service" ];
+        "svcvm-virtiofsd@" = {
+          description = "VirtioFS daemons for svcvm '%i'";
+          before = [ "svcvm@%i.service" ];
+          partOf = [ "svcvm@%i.service" ];
           after = [
             "local-fs.target"
-            "microvm-set-booted@%i.service"
+            "svcvm-set-booted@%i.service"
           ];
           unitConfig.ConditionPathExists = "${stateDir}/%i/current/bin/virtiofsd-run";
           serviceConfig = {
@@ -133,20 +133,20 @@ in
             PrivateTmp = "yes";
             Restart = "always";
             RestartSec = "5s";
-            SyslogIdentifier = "microvm-virtiofsd@%i";
+            SyslogIdentifier = "svcvm-virtiofsd@%i";
             Type = "notify";
             KillMode = "mixed";
           };
         };
-        "microvm-set-booted@" = {
-          description = "Save microvm '%i' booted configuration";
-          before = [ "microvm@%i.service" ];
-          partOf = [ "microvm@%i.service" ];
+        "svcvm-set-booted@" = {
+          description = "Save svcvm '%i' booted configuration";
+          before = [ "svcvm@%i.service" ];
+          partOf = [ "svcvm@%i.service" ];
           restartIfChanged = false;
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
-            SyslogIdentifier = "microvm-set-booted@%i";
+            SyslogIdentifier = "svcvm-set-booted@%i";
             WorkingDirectory = "${stateDir}/%i";
             User = user;
             Group = group;
@@ -157,19 +157,19 @@ in
             ln -s $(readlink current) booted
           '';
         };
-        "microvm@" = {
-          description = "microvm '%i'";
+        "svcvm@" = {
+          description = "svcvm '%i'";
           requires = [
-            "microvm-tap-interfaces@%i.service"
-            "microvm-virtiofsd@%i.service"
-            "microvm-set-booted@%i.service"
+            "svcvm-tap-interfaces@%i.service"
+            "svcvm-virtiofsd@%i.service"
+            "svcvm-set-booted@%i.service"
           ];
           after = [
             "network.target"
             "systemd-modules-load.service"
-            "microvm-tap-interfaces@%i.service"
-            "microvm-virtiofsd@%i.service"
-            "microvm-set-booted@%i.service"
+            "svcvm-tap-interfaces@%i.service"
+            "svcvm-virtiofsd@%i.service"
+            "svcvm-set-booted@%i.service"
           ];
           unitConfig.ConditionPathExists = "${stateDir}/%i/current/bin/microvm-run";
           restartIfChanged = false;
@@ -189,7 +189,7 @@ in
             RestartSec = "5s";
             User = user;
             Group = group;
-            SyslogIdentifier = "microvm@%i";
+            SyslogIdentifier = "svcvm@%i";
             LimitNOFILE = 1048576;
             NotifyAccess = "all";
             LimitMEMLOCK = "infinity";
@@ -198,7 +198,7 @@ in
       }
       (builtins.attrNames config.microvm.vms);
 
-  systemd.targets.microvms = {
+  systemd.targets.svcvms = {
     wantedBy = [ "multi-user.target" ];
   };
 

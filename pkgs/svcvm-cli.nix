@@ -6,7 +6,7 @@
   lib,
   openssh,
   writeShellScriptBin,
-  stateDir ? "/var/lib/microvms",
+  stateDir ? "/var/lib/svcvms",
 }:
 
 let
@@ -21,7 +21,7 @@ let
   };
   colored = color: text: "${colors.${color}}${text}${colors.normal}";
 in
-writeShellScriptBin "microvm" ''
+writeShellScriptBin "svcvm" ''
   set -e
 
   PATH=${lib.makeBinPath [ openssh ]}:$PATH
@@ -51,14 +51,14 @@ writeShellScriptBin "microvm" ''
 
   case $ACTION in
     help)
-      echo microvm
+      echo svcvm Service Virutal Machines for NixOS
       echo
       cat << EOF
   Usage: $0 [-l | -s <name>]
 
   Options:
-          -s <name>   SSH into a microvm via VSOCK
-          -l          List microvms
+          -s <name>   SSH into a svcvm via VSOCK
+          -l          List svcvms
   EOF
       ;;
     list)
@@ -72,12 +72,12 @@ writeShellScriptBin "microvm" ''
             # Should always equal current system
             NEW_SYSTEM=$(readlink "$DIR/toplevel")
           else
-            echo -e "${colored "red" "microvm $NAME has an inconsistent state (missing toplevel symlink)"}"
+            echo -e "${colored "red" "svcvm $NAME has an inconsistent state (missing toplevel symlink)"}"
             exit 1
           fi
           NEW=''${NEW_SYSTEM#*-}
 
-          if systemctl is-active -q "microvm@$NAME" ; then
+          if systemctl is-active -q "svcvm@$NAME" ; then
             echo -n -e "${colors.boldGreen}"
           elif [ -e "$DIR/booted" ]; then
             echo -n -e "${colors.boldYellow}"
@@ -86,7 +86,7 @@ writeShellScriptBin "microvm" ''
           fi
           echo -n -e "''${NAME}${colors.normal}: "
           if [ "$CURRENT_SYSTEM" != "$NEW_SYSTEM" ] ; then
-            echo -e "${colored "red" "microvm $NAME has an inconsistent state (current != toplevel)"}"
+            echo -e "${colored "red" "svcvm $NAME has an inconsistent state (current != toplevel)"}"
             exit 1
           elif [ -L "$DIR/booted" ]; then
             BOOTED_SYSTEM=$(readlink "$DIR/booted/share/microvm/system")
@@ -94,10 +94,10 @@ writeShellScriptBin "microvm" ''
             if [ "$NEW_SYSTEM" = "$BOOTED_SYSTEM" ]; then
               echo -e "${colored "green" "current"}(${colored "green" "$BOOTED"})"
             else
-              echo -e "${colored "red" "stale"}(${colored "green" "$BOOTED"}), reboot(${colored "green" "$NEW"}): ${colored "boldCyan" "systemctl restart microvm@$NAME.service"}"
+              echo -e "${colored "red" "stale"}(${colored "green" "$BOOTED"}), reboot(${colored "green" "$NEW"}): ${colored "boldCyan" "systemctl restart svcvm@$NAME.service"}"
             fi
           else
-            echo -e "${colored "green" "current"}(${colored "green" "$CURRENT"}), not booted: ${colored "boldCyan" "systemctl start microvm@$NAME.service"}"
+            echo -e "${colored "green" "current"}(${colored "green" "$CURRENT"}), not booted: ${colored "boldCyan" "systemctl start svcvm@$NAME.service"}"
           fi
         fi
       done
@@ -105,13 +105,13 @@ writeShellScriptBin "microvm" ''
 
     ssh)
       if [ ! -d "$DIR" ]; then
-        echo -e "${colored "red" "microvm $NAME not found"}"
+        echo -e "${colored "red" "svcvm $NAME not found"}"
         exit 1
       fi
 
       # Check if VM is running
-      if ! systemctl is-active -q "microvm@$NAME" ; then
-        echo -e "${colored "red" "microvm $NAME is not running"}"
+      if ! systemctl is-active -q "svcvm@$NAME" ; then
+        echo -e "${colored "red" "svcvm $NAME is not running"}"
         exit 1
       fi
 
@@ -121,7 +121,7 @@ writeShellScriptBin "microvm" ''
       fi
 
       if [ -z "$VSOCK_CID" ]; then
-        echo -e "${colored "red" "microvm $NAME does not have VSOCK enabled"}"
+        echo -e "${colored "red" "svcvm $NAME does not have VSOCK enabled"}"
         echo "Set microvm.vsock.cid in the VM configuration"
         exit 1
       fi

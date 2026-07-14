@@ -9,9 +9,9 @@
 
     stateDir = lib.mkOption {
       type = lib.types.path;
-      default = "/var/lib/microvms";
+      default = "/var/lib/svcvms";
       description = ''
-        Directory that contains the microvms.
+        Directory that contains the svcvms.
       '';
     };
 
@@ -22,7 +22,7 @@
             options = {
               config = lib.mkOption {
                 description = ''
-                  A specification of the desired configuration of this microvm,
+                  A specification of the desired configuration of this svcvm,
                   as a NixOS module.
                 '';
                 type = lib.mkOptionType {
@@ -63,7 +63,7 @@
                 type = lib.types.nullOr lib.types.unspecified;
                 default = pkgs;
                 description = ''
-                  The package set to use for the MicroVM. Must be a
+                  The package set to use for the svcvm. Must be a
                   nixpkgs package set with the microvm overlay. Determines
                   the system of the MicroVM.
 
@@ -84,7 +84,7 @@
                 default = [ ];
                 description = ''
                   A list of additional NixOS modules to be merged into
-                  the microvm's system configuration.
+                  the svcvm's system configuration.
                 '';
                 defaultText = lib.literalExpression ''
                   [
