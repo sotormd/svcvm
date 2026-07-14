@@ -158,7 +158,7 @@ in
           '';
         };
         "svcvm@" = {
-          description = "svcvm '%i'";
+          description = "svcvm Service Virtual Machine '%i'";
           requires = [
             "svcvm-tap-interfaces@%i.service"
             "svcvm-virtiofsd@%i.service"
