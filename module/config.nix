@@ -1,7 +1,3 @@
-# derived from https://github.com/microvm-nix/microvm.nix
-# https://github.com/microvm-nix/microvm.nix/blob/6dab06c1886c80b5bc28276e4879e699c86b3e5e/nixos-modules/host/default.nix
-# modified for svcvm
-
 {
   config,
   pkgs,
@@ -10,17 +6,12 @@
 }:
 
 let
-  inherit (config.microvm) stateDir;
-  svcvm-cli = pkgs.callPackage ../../pkgs/svcvm-cli.nix { inherit stateDir; };
+  inherit (config.svcvm) stateDir;
+  svcvm-cli = pkgs.callPackage ./svcvm-cli.nix { inherit stateDir; };
   user = "svcvm";
   group = "kvm";
 in
 {
-  boot.kernelModules = [
-    # For `type = "tap"` interfaces
-    "tap"
-  ];
-
   # create the stateDir for all svcvms
   systemd.tmpfiles.rules = [ "d ${stateDir} 755 ${user} ${group} -" ];
 
@@ -56,8 +47,8 @@ in
         result
         // (
           let
-            guestConfig = config.microvm.vms.${name}.config.config;
-            runner = guestConfig.microvm.declaredRunner;
+            guestConfig = config.svcvm.vms.${name}.config.config;
+            runner = guestConfig.svcvm.declaredRunner;
           in
           {
             "install-svcvm-${name}" = {
@@ -196,7 +187,7 @@ in
           };
         };
       }
-      (builtins.attrNames config.microvm.vms);
+      (builtins.attrNames config.svcvm.vms);
 
   systemd.targets.svcvms = {
     wantedBy = [ "multi-user.target" ];
