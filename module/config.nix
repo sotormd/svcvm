@@ -6,10 +6,10 @@
 }:
 
 let
+  inherit (config._internal) user group;
+
   inherit (config.svcvm) stateDir;
   svcvm-cli = pkgs.callPackage ./svcvm-cli.nix { inherit stateDir; };
-  user = "svcvm";
-  group = "kvm";
 in
 {
   # create the stateDir for all svcvms
@@ -19,6 +19,11 @@ in
   environment.systemPackages = [ svcvm-cli ];
 
   # create the user
+  _internal = {
+    user = "svcvm";
+    group = "kvm";
+  };
+
   users.users.${user} = {
     isSystemUser = true;
     inherit group;
@@ -48,7 +53,7 @@ in
         // (
           let
             guestConfig = config.svcvm.vms.${name}.config.config;
-            runner = guestConfig.svcvm.declaredRunner;
+            runner = guestConfig._internal.runner;
           in
           {
             "install-svcvm-${name}" = {
@@ -60,7 +65,7 @@ in
                 "svcvm-set-booted@${name}.service"
               ];
               partOf = [ "svcvm@${name}.service" ];
-              wantedBy = [ "svcvms.target" ];
+              wantedBy = [ "svcvm.target" ];
               serviceConfig = {
                 Type = "oneshot";
                 SyslogIdentifier = "install-svcvm-${name}";
@@ -162,19 +167,13 @@ in
             "svcvm-virtiofsd@%i.service"
             "svcvm-set-booted@%i.service"
           ];
-          unitConfig.ConditionPathExists = "${stateDir}/%i/current/bin/microvm-run";
+          unitConfig.ConditionPathExists = "${stateDir}/%i/current/bin/svcvm-run";
           restartIfChanged = false;
           serviceConfig = {
             Type = "simple";
             WorkingDirectory = "${stateDir}/%i";
-            ExecStart = "${stateDir}/%i/current/bin/microvm-run";
-            ExecStop = "${stateDir}/%i/booted/bin/microvm-shutdown";
-            ExecStartPost = [
-              "+${pkgs.runtimeShell} -c 'if [ -x ${stateDir}/%i/current/bin/microvm-register ]; then ${stateDir}/%i/current/bin/microvm-register $MAINPID; fi'"
-            ];
-            ExecStopPost = [
-              "+${pkgs.runtimeShell} -c 'if [ -x ${stateDir}/%i/current/bin/microvm-unregister ]; then ${stateDir}/%i/current/bin/microvm-unregister; fi'"
-            ];
+            ExecStart = "${stateDir}/%i/current/bin/svcvm-run";
+            ExecStop = "${stateDir}/%i/booted/bin/svcvm-shutdown";
             TimeoutSec = 150;
             Restart = "always";
             RestartSec = "5s";
@@ -189,9 +188,8 @@ in
       }
       (builtins.attrNames config.svcvm.vms);
 
-  systemd.targets.svcvms = {
-    wantedBy = [ "multi-user.target" ];
-  };
+  # create a svcvm target
+  systemd.targets.svcvm.wantedBy = [ "multi-user.target" ];
 
   # Enable Kernel Same-Page Merging
   hardware.ksm.enable = lib.mkDefault true;

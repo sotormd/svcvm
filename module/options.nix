@@ -1,5 +1,13 @@
-{ pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
+let
+  inherit (config._internal) user group;
+in
 {
   options.svcvm = {
 
@@ -29,7 +37,9 @@
                     (import "${toString pkgs.path}/nixos/lib/eval-config.nix" {
                       modules = [
                         { _file = "module at ${__curPos.file}:${toString __curPos.line}"; }
-                        { networking.hostName = "${name}"; }
+                        {
+                          _internal = { inherit user group name; };
+                        }
                         ./svcvm
                       ]
                       ++ (map (x: x.value) defs);

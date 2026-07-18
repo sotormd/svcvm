@@ -2,7 +2,7 @@
   lib,
   openssh,
   writeShellScriptBin,
-  stateDir ? "/var/lib/svcvms",
+  stateDir,
 }:
 
 let

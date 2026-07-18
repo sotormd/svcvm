@@ -1,3 +1,5 @@
+# networking TAP interfaces
+
 {
   config,
   lib,
@@ -6,17 +8,14 @@
 }:
 
 let
-  tapInterfaces = config.svcvm.interfaces;
-
-  tapFlags = lib.concatStringsSep " " (
-    [ "vnet_hdr" ] ++ lib.optional config.svcvm.declaredRunner.passthru.tapMultiQueue "multi_queue"
-  );
-
-  # TODO: don't hardcode but obtain from host config
-  user = "svcvm";
+  inherit (config._internal) user vcpu interfaces;
 in
 {
-  svcvm.binScripts = lib.mkMerge [
+  # final list of interfaces
+  _internal.interfaces = config.svcvm.interfaces;
+
+  # scripts to bring TAP interfaces up and down on host
+  _internal.scripts.interfaces = lib.mkMerge [
     {
       tap-up = ''
         set -eou pipefail
@@ -26,16 +25,18 @@ in
           ${lib.getExe' pkgs.iproute2 "ip"} link delete '${id}'
         fi
 
-        ${lib.getExe' pkgs.iproute2 "ip"} tuntap add name '${id}' mode tap user '${user}' ${tapFlags}
+        ${lib.getExe' pkgs.iproute2 "ip"} tuntap add name '${id}' mode tap user '${user}' ${
+          lib.concatStringsSep " " ([ "vnet_hdr" ] ++ lib.optional (vcpu > 1) "multi_queue")
+        }
         ${lib.getExe' pkgs.iproute2 "ip"} link set '${id}' up
-      '') tapInterfaces;
+      '') interfaces;
 
       tap-down = ''
         set -ou pipefail
       ''
       + lib.concatMapStrings ({ id, ... }: ''
         ${lib.getExe' pkgs.iproute2 "ip"} link delete '${id}'
-      '') tapInterfaces;
+      '') interfaces;
     }
   ];
 }
