@@ -20,10 +20,14 @@ introduced here are licensed under [GPLv3](./LICENSE).
 
 - create QEMU/KVM virtual machines using the `microvm` machine type
 - manage these using the `svcvm` CLI or the various `svcvm@` systemd units
-- share filesystems from the host using `virtiofs`
-- share secrets and credentials from the host using `io.systemd.credentials`
+- VMs have the host's Nix Store as a `virtiofs` readonly share, and a `tmpfs`
+  root
+- share additional filesystems from the host using `virtiofs` (eg, for
+  persistent service data)
+- share secrets and credentials (eg, sops-nix secrets) from the host using
+  `io.systemd.credentials`
 - create vhost-enabled TAP interfaces for routed networking to be used along
-  with NAT
+  with NAT (eg, using nftables)
 
 The following features are intentionally unsupported (non-exhaustive list):
 
