@@ -40,6 +40,7 @@ in
     "virtio_pci"
     "virtio_blk"
     "virtiofs"
+    "vmw_vsock_virtio_transport"
   ];
 
   # modules that consume boot time but have rare use-cases
