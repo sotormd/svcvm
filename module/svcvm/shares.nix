@@ -186,7 +186,7 @@ in
   ];
 
   # fix unmounting in qemu on shutdown for /nix/store
-  systemd.mounts = lib.mkIf config.boot.initrd.systemd.enable [
+  systemd.mounts = [
     {
       what = "store";
       where = "/nix/store";
