@@ -50,8 +50,10 @@ in
     "drm"
   ];
 
+  # this is now default
+  #
   # use systemd initrd for startup speed
-  boot.initrd.systemd.enable = lib.mkDefault true;
+  # boot.initrd.systemd.enable = lib.mkDefault true;
 
   # we only need one kernel console
   boot.kernelParams = [ "8250.nr_uarts=1" ];
