@@ -5,8 +5,6 @@ service virtual machines for NixOS, derived from
 
 ![logo-with-diagram](./assets/logo-with-diagram.png)
 
-![screenshot](./assets/screenshot.png)
-
 # Notice
 
 svcvm is a deliberately minimal derivative of
@@ -56,3 +54,5 @@ The following features are intentionally unsupported (non-exhaustive list):
 > readiness indicators and `svcfg` service configuration.
 
 > Usage instructions are deliberately omitted.
+
+![screenshot](./assets/screenshot.png)
