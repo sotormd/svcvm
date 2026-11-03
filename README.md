@@ -3,7 +3,9 @@
 service virtual machines for NixOS, derived from
 [microvm.nix](https://github.com/microvm-nix/microvm.nix).
 
-![screenshot](./screenshot.png)
+![logo-with-diagram](./assets/logo-with-diagram.png)
+
+![screenshot](./assets/screenshot.png)
 
 # Notice
 
